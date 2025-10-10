@@ -1,0 +1,55 @@
+name: Example Usage
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  example:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Create example docker-compose.yml
+        run: |
+          cat > docker-compose.yml << EOF
+          version: '3.8'
+          services:
+            web:
+              image: nginx:alpine
+              ports:
+                - "8080:80"
+              healthcheck:
+                test: ["CMD", "curl", "-f", "http://localhost:80"]
+                interval: 10s
+                timeout: 5s
+                retries: 3
+                start_period: 30s
+          EOF
+      
+      - name: Start Docker Compose
+        run: docker compose up -d
+      
+      - name: Wait for application to be ready
+        uses: ./
+        with:
+          url: 'http://localhost:8080'
+          max-attempts: 10
+          wait-seconds: 5
+      
+      - name: Test application is responding
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080)
+          if [ $response -eq 200 ]; then
+            echo "✅ Application is responding correctly"
+          else
+            echo "❌ Application returned status code: $response"
+            exit 1
+          fi
+      
+      - name: Stop Docker Compose
+        if: always()
+        run: docker compose down

@@ -1,0 +1,79 @@
+name: Test Action
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-success:
+    name: Test successful health check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Create test docker-compose.yml
+        run: |
+          cat > docker-compose.test.yml << EOF
+          version: '3.8'
+          services:
+            test-app:
+              image: nginx:alpine
+              ports:
+                - "8080:80"
+              healthcheck:
+                test: ["CMD", "curl", "-f", "http://localhost:80"]
+                interval: 5s
+                timeout: 3s
+                retries: 3
+                start_period: 10s
+          EOF
+      
+      - name: Start test application
+        run: docker compose -f docker-compose.test.yml up -d
+      
+      - name: Test wait for application
+        uses: ./
+        with:
+          url: 'http://localhost:8080'
+          max-attempts: 20
+          wait-seconds: 3
+      
+      - name: Verify application is accessible
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080)
+          echo "Response code: $response"
+          if [ $response -ne 200 ]; then
+            echo "Expected 200, got $response"
+            exit 1
+          fi
+      
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.test.yml down
+
+  test-failure:
+    name: Test failure handling
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Test wait for non-existent application (should fail)
+        id: wait-fail
+        continue-on-error: true
+        uses: ./
+        with:
+          url: 'http://localhost:9999'
+          max-attempts: 3
+          wait-seconds: 1
+      
+      - name: Verify action failed as expected
+        run: |
+          if [ "${{ steps.wait-fail.outcome }}" != "failure" ]; then
+            echo "Expected action to fail, but it succeeded"
+            exit 1
+          fi
+          echo "✅ Action correctly failed for unreachable endpoint"
