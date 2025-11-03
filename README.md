@@ -4,6 +4,8 @@
 [![Test Action](https://github.com/optivem/wait-for-docker-compose-action/actions/workflows/test.yml/badge.svg)](https://github.com/optivem/wait-for-docker-compose-action/actions/workflows/test.yml)
 [![Release](https://github.com/optivem/wait-for-docker-compose-action/actions/workflows/release.yml/badge.svg)](https://github.com/optivem/wait-for-docker-compose-action/actions/workflows/release.yml)
 
+[![GitHub release](https://img.shields.io/github/release/optivem/wait-for-docker-compose-action.svg)](https://github.com/optivem/wait-for-docker-compose-action/releases)
+
 A GitHub Action that waits for a Docker Compose application to be ready by polling a health endpoint. This action is useful in CI/CD workflows where you need to ensure your Docker Compose services are fully started and healthy before running tests or other dependent steps.
 
 ## Features
