@@ -44,7 +44,7 @@ runs:
         
         echo "❌ Docker Compose application failed to become ready after $max_attempts attempts"
         echo "🔍 Checking Docker Compose container logs:"
-        docker compose logs --timestamps --tail=50
+        docker compose logs --timestamps
         echo "🐳 Docker Compose container status:"
         docker compose ps
         exit 1
